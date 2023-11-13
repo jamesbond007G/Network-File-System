@@ -1,4 +1,4 @@
-#include "naming_server.h"
+ #include "naming_server.h"
 int server_socket;
 struct sockaddr_in server_address;
 int server_socket2;
@@ -6,7 +6,7 @@ struct sockaddr_in server_address2;
 pthread_t customer_intialize_thread;
 pthread_t stserver_intialize_thread;
 // pthread_t customer_thread[100];
-int port_number_for_client[100]={0};
+int port_number_for_client[100];
 
 void *customer_handler(void *arg)
 {
@@ -64,17 +64,14 @@ void *stserver_handler(void *arg)
     int stserver_socket = *(int *)arg;
     struct sockaddr_in stserver_address;
     socklen_t stserver_address_len = sizeof(stserver_address);
-    My_info *my_info;
-    my_info = (My_info *)malloc(sizeof(My_info));
-    my_info->ip = (char *)malloc(sizeof(char) * 32);
-    recv(stserver_socket, &my_info, sizeof(My_info), 0);
-    
-    printf("server number %d\n", my_info->server_num);
-    // printf("Received IP :%s port_num : %d port_for_customer : %d server_num : %d\n", my_info->ip, my_info->port, my_info->client_port, my_info->server_num);
-    // while (1)
-    // {
+    My_info my_info;
+    if ((recv(stserver_socket, &my_info, sizeof(my_info), 0)) > 0)
+    {
+        
+    }
+    printf("Received IP : %s port_num : %d port_for_customer : %d server_num : %d\n",my_info.ip,my_info.port, my_info.client_port, my_info.server_num);
+    printf("%s\n", my_info.fullpath);
 
-    // }
     close(stserver_socket);
     return NULL;
 }
