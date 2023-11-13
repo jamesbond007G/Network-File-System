@@ -13,5 +13,14 @@
 #define PORT1 12345
 #define PORT2 54321
 #define BUFFER_SIZE 1024
+typedef struct
+{
+    char *ip;
+    int port;
+    int client_port;
+    int server_num;
+    char fullpath[BUFFER_SIZE];
+
+} My_info;
 
 

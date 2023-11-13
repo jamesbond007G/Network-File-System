@@ -6,6 +6,7 @@ struct sockaddr_in server_address2;
 pthread_t customer_intialize_thread;
 pthread_t stserver_intialize_thread;
 // pthread_t customer_thread[100];
+int port_number_for_client[100]={0};
 
 void *customer_handler(void *arg)
 {
@@ -23,8 +24,8 @@ void *customer_handler(void *arg)
             printf("Received data: %s", buffer);
 
             // Send a response back to the client (optional)
+            send(client_socket, "Message received successfully\n", strlen("Message received successfully\n"), 0);
         }
-        send(client_socket, "Message received successfully\n", strlen("Message received successfully\n"), 0);
     }
     close(client_socket);
 
@@ -63,18 +64,17 @@ void *stserver_handler(void *arg)
     int stserver_socket = *(int *)arg;
     struct sockaddr_in stserver_address;
     socklen_t stserver_address_len = sizeof(stserver_address);
-    while (1)
-    {
-        while ((bytes_received = recv(stserver_socket, buffer, sizeof(buffer), 0)) > 0)
-        {
-            // Process received data (you can replace this with your own logic)
-            buffer[bytes_received] = '\0'; // Null-terminate the received data
-            printf("Received data: %s", buffer);
+    My_info *my_info;
+    my_info = (My_info *)malloc(sizeof(My_info));
+    my_info->ip = (char *)malloc(sizeof(char) * 32);
+    recv(stserver_socket, &my_info, sizeof(My_info), 0);
+    
+    printf("server number %d\n", my_info->server_num);
+    // printf("Received IP :%s port_num : %d port_for_customer : %d server_num : %d\n", my_info->ip, my_info->port, my_info->client_port, my_info->server_num);
+    // while (1)
+    // {
 
-            // Send a response back to the client (optional)
-        }
-        send(stserver_socket, "Message received successfully from storage thread\n", strlen("Message received successfully from storage thread\n"), 0);
-    }
+    // }
     close(stserver_socket);
     return NULL;
 }
@@ -148,9 +148,9 @@ int main()
     }
 
     // Set up server address struct
-    server_address.sin_family = AF_INET;
-    server_address.sin_addr.s_addr = INADDR_ANY;
-    server_address.sin_port = htons(PORT2);
+    server_address2.sin_family = AF_INET;
+    server_address2.sin_addr.s_addr = INADDR_ANY;
+    server_address2.sin_port = htons(PORT2);
 
     // Bind the socket to the specified address and port
     if (bind(server_socket2, (struct sockaddr *)&server_address2, sizeof(server_address2)) == -1)
