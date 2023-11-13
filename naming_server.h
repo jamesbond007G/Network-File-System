@@ -10,7 +10,8 @@
 #include <arpa/inet.h>
 #include <pthread.h>
 
-#define PORT 12345
+#define PORT1 12345
+#define PORT2 54321
 #define BUFFER_SIZE 1024
 
 
