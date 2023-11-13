@@ -10,7 +10,8 @@
 #include <arpa/inet.h>
 #include <pthread.h>
 
-#define PORT1 12345
+#define PORT11 12345
+#define PORT2 54321
 #define PORT2 5432
 #define BUFFER_SIZE 1024
 typedef struct
@@ -22,3 +23,5 @@ typedef struct
     char fullpath[1024];
 
 } My_info;
+
+

@@ -1,3 +1,4 @@
+
  #include "naming_server.h"
 int server_socket;
 struct sockaddr_in server_address;
@@ -65,12 +66,9 @@ void *stserver_handler(void *arg)
     struct sockaddr_in stserver_address;
     socklen_t stserver_address_len = sizeof(stserver_address);
     My_info my_info;
-    // my_info = (My_info *)malloc(sizeof(My_info));
-    // my_info.ip = (char *)malloc(sizeof(char) * 500);
     if ((recv(stserver_socket, &my_info, sizeof(my_info), 0)) > 0)
     {
-    }
-    if(my_info.ip==NULL){
+        
     }
     printf("Received IP : %s port_num : %d port_for_customer : %d server_num : %d\n",my_info.ip,my_info.port, my_info.client_port, my_info.server_num);
     printf("%s\n", my_info.fullpath);
