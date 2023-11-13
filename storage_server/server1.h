@@ -9,16 +9,10 @@
 #include <fcntl.h>
 #include <arpa/inet.h>
 #include <pthread.h>
+#include <dirent.h>
+#define PORT 5432
+// #define SERVER_IP "10.42.0.1"
+#define SERVER_IP "127.0.0.1"
 
-#define PORT1 12345
-#define PORT2 5432
 #define BUFFER_SIZE 1024
-typedef struct
-{
-    char ip[32];
-    int port;
-    int client_port;
-    int server_num;
-    char fullpath[1024];
-
-} My_info;
+#define server_no 1
