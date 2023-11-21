@@ -1,0 +1,532 @@
+#include "naming_server.h"
+#include "functions.h"
+#include <semaphore.h>
+#include <stdlib.h>
+#include "cache.h"
+#define CACHE_SIZE 4
+#define TOTAL_SERVER 100
+int server_socket;
+struct sockaddr_in server_address;
+int server_socket2;
+struct sockaddr_in server_address2;
+int server_socket3;
+struct sockaddr_in server_address3;
+pthread_t customer_intialize_thread;
+pthread_t stserver_intialize_thread;
+int port_number_for_client[TOTAL_SERVER];
+char *ip_for_ss[TOTAL_SERVER];
+int port_number_for_ss[TOTAL_SERVER];
+int query_port_for_ss[TOTAL_SERVER];
+pthread_t cli_thread;
+TrieNode *Trie_for_ss;
+TrieNode *Trie_for_ss1[TOTAL_SERVER];
+LRUCache *cache;
+int current_cache_size = 0;
+int cache_time = 0;
+int socket_for_client[TOTAL_SERVER];
+void *customer_handler(void *arg)
+{
+    char buffer[BUFFER_SIZE];
+    ssize_t bytes_received;
+    int client_socket = *(int *)arg;
+    struct sockaddr_in client_address;
+    socklen_t client_address_len = sizeof(client_address);
+    while (1)
+    {
+        while ((bytes_received = recv(client_socket, buffer, sizeof(buffer), 0)) > 0)
+        {
+            // Process received data (you can replace this with your own logic)
+            buffer[bytes_received] = '\0'; // Null-terminate the received data
+            printf("Received data: %s", buffer);
+            char function_to_call[1024];
+            char argument[1024];
+            char *temp = (char *)malloc(sizeof(char) * 1024);
+            strcpy(temp, buffer);
+            char *token = strtok(buffer, " \t\n");
+            char *extra_argument = (char *)malloc(sizeof(char) * 1024);
+            int counter1 = 0;
+            while (token != NULL)
+            {
+                if (counter1 == 0)
+                {
+                    strcpy(function_to_call, token);
+                    counter1++;
+                }
+                else if (counter1 == 1)
+                {
+                    strcpy(argument, token);
+                    counter1++;
+                }
+                else
+                {
+                    strcpy(extra_argument, token);
+                    counter1++;
+                }
+                token = strtok(NULL, " \t\n");
+            }
+            if (counter1 == 2)
+                argument[strlen(argument)] = '\0';
+            else
+                extra_argument[strlen(extra_argument)] = '\0';
+            if (strcmp(function_to_call, "read") == 0)
+            {
+                printf("Client requested to read %s\n", argument);
+            }
+            else if (strcmp(function_to_call, "write") == 0)
+            {
+                printf("Client requested to write %s\n", argument);
+            }
+            else if (strcmp(function_to_call, "retrieve") == 0)
+            {
+                printf("Client requested to retrieve %s\n", argument);
+            }
+            else if (strcmp(function_to_call, "append") == 0)
+            {
+                printf("Client requested to append %s\n", argument);
+            }
+            else if (strcmp(function_to_call, "createfile") == 0)
+            {
+                printf("Client requested to createfile at %s named %s\n", argument, extra_argument);
+                int idx = 0;
+                for (int i = 0; i < TOTAL_SERVER; i++)
+                {
+                    if(search_trie(Trie_for_ss1[i], argument))
+                    {
+                        idx = i;
+                        break;
+                    }
+                }
+                send(socket_for_client[idx], buffer, strlen(buffer), 0);
+                recv(socket_for_client[idx], buffer, BUFFER_SIZE, 0);
+                if(strcmp(buffer, "done") == 0)
+                {
+                    // printf("File created successfully\n");
+                    send(client_socket, "done", strlen("done"), 0);
+                }
+                else
+                {
+                    send(client_socket, "failed", strlen("failed"), 0);
+                    // printf("File creation failed\n");
+                }
+                
+            }
+            else if (strcmp(function_to_call, "createdir") == 0)
+            {
+                printf("Client requested to createdir at %s named %s\n", argument, extra_argument);
+            }
+            else if (strcmp(function_to_call, "deletefile") == 0)
+            {
+                printf("Client requested to deletefile at %s named %s\n", argument, extra_argument);
+            }
+            else if (strcmp(function_to_call, "deletedir") == 0)
+            {
+                printf("Client requested to deletedir at %s named %s\n", argument, extra_argument);
+            }
+            int index_of_server = -1;
+            // try to search this in cache
+            int rec = -1;
+            // int rec = findInCache(cache, argument);
+            // printf("rec %d\n", rec);
+            // printCache(cache);
+            index_of_server = rec;
+
+            for (int i = 1; i < TOTAL_SERVER; i++)
+            {
+                if (index_of_server != -1)
+                    break;
+                if (search_trie(Trie_for_ss1[i], argument))
+                {
+                    index_of_server = i;
+                    break;
+                }
+            }
+            // printf("got index of server %d\n", index_of_server);
+            if (index_of_server == -1)
+            {
+                printf("The location you want to access do not exist\n");
+            }
+            else
+            {
+                if (rec == -1)
+                {
+                    // updateAges(cache);
+                    // addToCache(cache, argument, index_of_server);
+                }
+                // printCache(cache);
+                return_struct return_struct_to_send;
+                return_struct_to_send.port = port_number_for_client[index_of_server];
+                strcpy(return_struct_to_send.ip, ip_for_ss[index_of_server]);
+                // Send a response back to the client (optional)
+                send(client_socket, &return_struct_to_send, sizeof(return_struct_to_send), 0);
+            }
+        }
+    }
+    close(client_socket);
+
+    return NULL;
+}
+
+void *customer_intialize(void *arg)
+{
+    while (1)
+    {
+        char buffer[BUFFER_SIZE];
+        // Accept a connection
+        int client_socket;
+        struct sockaddr_in client_address;
+        socklen_t client_address_len = sizeof(client_address);
+
+        if ((client_socket = accept(server_socket, (struct sockaddr *)&client_address, &client_address_len)) == -1)
+        {
+            perror("Error accepting connection");
+            close(server_socket);
+            exit(EXIT_FAILURE);
+        }
+
+        printf("Connection from %s:%d\n", inet_ntoa(client_address.sin_addr), ntohs(client_address.sin_port));
+        pthread_t customer_thread;
+        pthread_create(&customer_thread, NULL, customer_handler, (void *)&client_socket);
+    }
+    return NULL;
+}
+void *query_handler(void *arg)
+{
+    int query_server_socket, query_new_socket;
+    struct sockaddr_in query_server_addr, query_client_addr;
+    socklen_t query_client_addr_len = sizeof(query_client_addr);
+    char query_buffer[BUFFER_SIZE] = {0};
+
+    // Create socket
+    if ((query_server_socket = socket(AF_INET, SOCK_STREAM, 0)) == -1)
+    {
+        perror("Socket creation failed");
+        exit(EXIT_FAILURE);
+    }
+
+    query_server_addr.sin_family = AF_INET;
+    query_server_addr.sin_addr.s_addr = INADDR_ANY;
+    query_server_addr.sin_port = htons(((My_info *)arg)->query_port);
+
+    // Bind the socket to the specified port
+    if (bind(query_server_socket, (struct sockaddr *)&query_server_addr, sizeof(query_server_addr)) == -1)
+    {
+        perror("Bind failed");
+        exit(EXIT_FAILURE);
+    }
+
+    // Listen for incoming connections
+    if (listen(query_server_socket, 10) == -1)
+    {
+        perror("Listen failed");
+        exit(EXIT_FAILURE);
+    }
+
+    printf("Server listening on port %d for queries\n", ((My_info *)arg)->query_port);
+
+    // Accept an incoming connection
+    if ((query_new_socket = accept(query_server_socket, (struct sockaddr *)&query_client_addr, &query_client_addr_len)) == -1)
+    {
+        perror("Accept failed");
+        exit(EXIT_FAILURE);
+    }
+    // while (1)
+    socket_for_client[((My_info *)arg)->server_num] = query_new_socket;
+    // {
+    //     send(query_new_socket, "Enter the file name: ", strlen("Enter the file name: "), 0);
+    //     recv(query_new_socket, query_buffer, BUFFER_SIZE, 0);
+    //     printf("Received query: %s\n", query_buffer);
+    // }
+
+    // close(query_server_socket);
+    // close(query_new_socket);
+    return NULL;
+}
+
+void *stserver_handler(void *arg)
+{
+    char buffer[BUFFER_SIZE];
+    ssize_t bytes_received;
+    int stserver_socket = *(int *)arg;
+    struct sockaddr_in stserver_address;
+    socklen_t stserver_address_len = sizeof(stserver_address);
+    My_info my_info;
+    if ((recv(stserver_socket, &my_info, sizeof(my_info), 0)) > 0)
+    {
+    }
+    printf("Received IP : %s port_num : %d port_for_customer : %d server_num : %d\n", my_info.ip, my_info.port, my_info.client_port, my_info.server_num);
+    port_number_for_client[my_info.server_num] = my_info.client_port;
+    port_number_for_ss[my_info.server_num] = my_info.port;
+    printf("%s\n", my_info.fullpath);
+    query_port_for_ss[my_info.server_num] = my_info.query_port;
+    ip_for_ss[my_info.server_num] = (char *)malloc(sizeof(char) * 35);
+    strcpy(ip_for_ss[my_info.server_num], my_info.ip);
+    char *token = strtok(my_info.fullpath, "\n");
+    while (token != NULL && token[0] != '\n')
+    {
+        printf("%s\n", token);
+        insert_trie(Trie_for_ss1[my_info.server_num], token);
+        token = strtok(NULL, "\n");
+    }
+    pthread_t query_thread;
+    // pthread_create(&query_thread, NULL, query_handler, (void *)&my_info);
+    // close(stserver_socket);
+    // pthread_join(query_thread, NULL);
+    // now make the functoin with the query port as open
+
+    // print_trie(Trie_for_ss1);
+    return NULL;
+}
+void *stserver_intialize(void *arg)
+{
+    while (1)
+    {
+        char buffer[BUFFER_SIZE];
+        // Accept a connection
+        int stserver_socket;
+        struct sockaddr_in stserver_address;
+        socklen_t stserver_address_len = sizeof(stserver_address);
+
+        if ((stserver_socket = accept(server_socket2, (struct sockaddr *)&stserver_address, &stserver_address_len)) == -1)
+        {
+            perror("Error accepting connection");
+            close(server_socket2);
+            exit(EXIT_FAILURE);
+        }
+
+        printf("Connection from storage server %s:%d\n", inet_ntoa(stserver_address.sin_addr), ntohs(stserver_address.sin_port));
+        pthread_t stserver_thread;
+        pthread_create(&stserver_thread, NULL, stserver_handler, (void *)&stserver_socket);
+    }
+    return NULL;
+}
+
+int main()
+{
+
+    cache = initCache(CACHE_SIZE);
+
+    for (int i = 0; i < TOTAL_SERVER; i++)
+    {
+        Trie_for_ss1[i] = make_trienode('0');
+    }
+
+    char buffer[BUFFER_SIZE];
+
+    // Create socket
+    if ((server_socket = socket(AF_INET, SOCK_STREAM, 0)) == -1)
+    {
+        perror("Error creating socket");
+        exit(EXIT_FAILURE);
+    }
+
+    // Set up server address struct
+    server_address.sin_family = AF_INET;
+    server_address.sin_addr.s_addr = INADDR_ANY;
+    server_address.sin_port = htons(PORT1);
+
+    // Bind the socket to the specified address and port
+    if (bind(server_socket, (struct sockaddr *)&server_address, sizeof(server_address)) == -1)
+    {
+        perror("Error binding socket");
+        close(server_socket);
+        exit(EXIT_FAILURE);
+    }
+
+    // Listen for incoming connections
+    if (listen(server_socket, 10) == -1)
+    {
+        perror("Error listening for connections");
+        close(server_socket);
+        exit(EXIT_FAILURE);
+    }
+
+    // NEW ADDITIONS
+    char buffer2[BUFFER_SIZE];
+
+    // Create socket
+    if ((server_socket2 = socket(AF_INET, SOCK_STREAM, 0)) == -1)
+    {
+        perror("Error creating socket");
+        exit(EXIT_FAILURE);
+    }
+
+    // Set up server address struct
+    server_address2.sin_family = AF_INET;
+    server_address2.sin_addr.s_addr = INADDR_ANY;
+    server_address2.sin_port = htons(PORT2);
+
+    // Bind the socket to the specified address and port
+    if (bind(server_socket2, (struct sockaddr *)&server_address2, sizeof(server_address2)) == -1)
+    {
+        perror("Error binding socket");
+        close(server_socket2);
+        exit(EXIT_FAILURE);
+    }
+
+    // Listen for incoming connections
+    if (listen(server_socket2, 10) == -1)
+    {
+        perror("Error listening for connections");
+        close(server_socket2);
+        exit(EXIT_FAILURE);
+    }
+
+    printf("Server is listening on port %d for customers\n", PORT1);
+    printf("Server is listening on port %d for storage servers\n", PORT2);
+
+    pthread_create(&customer_intialize_thread, NULL, customer_intialize, NULL);
+    pthread_create(&stserver_intialize_thread, NULL, stserver_intialize, NULL);
+    // pthread_create(&cli_thread, NULL, cli_handler, NULL);
+
+    // pthread_join(customer_intialize_thread, NULL);
+    pthread_join(stserver_intialize_thread, NULL);
+    pthread_join(cli_thread, NULL);
+
+    // Close the server socket
+    close(server_socket);
+
+    return 0;
+}
+// for (int i = 1; i < 100; i++)
+// {
+//     pthread_mutex_lock(&lock);
+//     if (search(Trie_for_ss[i], argument))
+//     {
+//         index_of_server = i;
+//         pthread_mutex_unlock(&lock);
+//         break;
+//     }
+//     pthread_mutex_unlock(&lock);
+//     // printf("search output %d\n", search(Trie_for_ss[i], "./output.txt"));
+// }
+// printf("got index of server %d\n", index_of_server);
+
+// //
+//  pthread_t function_server;
+//                 pthread_create(&function_server, NULL, function_server_handler, (void *)&buffer);
+//                 pthread_join(function_server, NULL);
+//                 send(client_socket, "done", strlen("done"), 0);
+
+
+
+// new added 
+
+
+void *query_handler(void *arg)
+{
+    int query_server_socket, query_new_socket;
+    struct sockaddr_in query_server_addr, query_client_addr;
+    socklen_t query_client_addr_len = sizeof(query_client_addr);
+    char query_buffer[BUFFER_SIZE] = {0};
+
+    // Create socket
+    if ((query_server_socket = socket(AF_INET, SOCK_STREAM, 0)) == -1)
+    {
+        perror("Socket creation failed");
+        exit(EXIT_FAILURE);
+    }
+
+    query_server_addr.sin_family = AF_INET;
+    query_server_addr.sin_addr.s_addr = INADDR_ANY;
+    query_server_addr.sin_port = htons(((My_info *)arg)->query_port);
+
+    // Bind the socket to the specified port
+    if (bind(query_server_socket, (struct sockaddr *)&query_server_addr, sizeof(query_server_addr)) == -1)
+    {
+        perror("Bind failed");
+        exit(EXIT_FAILURE);
+    }
+
+    // Listen for incoming connections
+    if (listen(query_server_socket, 1000) == -1)
+    {
+        perror("Listen failed");
+        exit(EXIT_FAILURE);
+    }
+
+    printf("Server listening on port %d for queries\n", ((My_info *)arg)->query_port);
+    while (1)
+    {
+        if ((query_new_socket = accept(query_server_socket, (struct sockaddr *)&query_client_addr, &query_client_addr_len)) == -1)
+        {
+            perror("Accept failed");
+            exit(EXIT_FAILURE);
+        }
+        printf("Connection from %s:%d\n", inet_ntoa(query_client_addr.sin_addr), ntohs(query_client_addr.sin_port));
+        socket_for_client[((My_info *)arg)->server_num] = query_new_socket;
+    }
+  
+    return NULL;
+}
+
+
+ //  send(client_socket1, )
+
+                // // printf("%s", temp)
+                // send(client_socket1, temp, strlen(temp), 0);
+
+                // // taking the zip
+                // int tarFile = open("received.tar", O_WRONLY | O_CREAT | O_TRUNC, 0644);
+                // if (tarFile == -1)
+                // {
+                //     perror("Unable to create tar file");
+                // }
+
+                // char buffer[BUFFER_SIZE];
+                // ssize_t bytesRead;
+
+                // // Receive and write the tar file
+                // if ((bytesRead = recv(client_socket1, buffer, sizeof(buffer), 0)) > 0)
+                // {
+                //     // printf("1");
+                //     // if (strcmp(buffer, "stop") == 0)
+                //     // {
+                //     //     printf("Yeah\n");
+                //     //     break;
+                //     // }
+                //     if (write(tarFile, buffer, bytesRead) == -1)
+                //     {
+                //         perror("Error writing to tar file");
+                //     }
+                // }
+
+                // close(tarFile);
+                // printf("now started sending\n");
+
+                // // char message[100];
+                // // Create socket
+                // tarFile = open("received.tar", O_RDONLY);
+                // if (tarFile == -1)
+                // {
+                //     perror("Unable to open tar file");
+                // }
+                // char command_to_send[1024];
+                // strcpy(command_to_send, "paste ");
+                // char *token_new = strtok(temp, " \t\n");
+                // token_new = strtok(NULL, " \t\n");
+                // token_new = strtok(NULL, " \t\n");
+                // strcat(command_to_send, token_new);
+                // // char temper[1024];
+                // // while (token_new != NULL)
+                // // {
+                // //     strcpy(temper, token_new);
+                // //     token_new = strtok(NULL, " \t\n");
+                // // }
+                // // strcat(command_to_send, temper);
+                // printf("to be send %s\n", command_to_send);
+                // send(client_socket2, command_to_send, strlen(command_to_send), 0);
+                // // char buffer[BUFFER_SIZE];
+                // // ssize_t bytesRead;
+                // bzero(buffer, 1024);
+                // while ((bytesRead = read(tarFile, buffer, sizeof(buffer))) > 0)
+                // {
+                //     printf("YES\n");
+                //     if (send(client_socket2, buffer, bytesRead, 0) == -1)
+                //     {
+                //         perror("Error sending tar file");
+                //     }
+                // }
+                // printf("sending completed\n");
+                // // Close sockets and file
+                // // close(client_socket1);
+                // close(tarFile);

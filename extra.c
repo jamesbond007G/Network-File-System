@@ -175,7 +175,7 @@ int get_cache(char *path)
 {
     if (hash[djb2Hash(path)] != -1)
     {
-        printf("Cache hit  %s\n", path);
+        printf("Cache hit\n");
         deleteNodeByPath(path);
         head = insertCacheNode(path, hash[djb2Hash(path)]);
 
@@ -183,7 +183,7 @@ int get_cache(char *path)
     }
     else
     {
-        printf("Cache miss %s\n", path);
+        printf("Cache miss\n");
         return -1;
     }
 }
@@ -217,7 +217,7 @@ void copy_and_paste_server(int idx, int idx2, char argument[], char extra_argume
     }
     // srand(time(NULL));
     int random = getRandomNumber(25000, 45000);
-    // printf("random number %d\n", random);
+    printf("random number %d\n", random);
     char message1[1024];
     between_ss foridx1;
     between_ss foridx2;
@@ -226,11 +226,11 @@ void copy_and_paste_server(int idx, int idx2, char argument[], char extra_argume
     foridx1.role = 1;
     foridx1.port = random;
     strcpy(message1, "copy");
-    // printf("SENT TO 1ST SS\n");
+    printf("SENT TO 1ST SS\n");
     send(client_socket1, &message1, sizeof(message1), 0);
     send(client_socket1, &foridx1, sizeof(foridx1), 0);
     char check1[1024];
-    // printf("check1 : %s", check1);
+    printf("check1 : %s", check1);
 
     // send(client_socket1, &foridx1, sizeof(foridx1), 0);
 
@@ -248,7 +248,7 @@ void copy_and_paste_server(int idx, int idx2, char argument[], char extra_argume
     struct sockaddr_in server_addr2;
     server_addr2.sin_family = AF_INET;
     server_addr2.sin_port = htons(query_port_for_ss[idx2]);
-    // printf("sending to %d %s\n", query_port_for_ss[idx2], ip_for_ss[idx2]);
+    printf("sending to %d %s\n", query_port_for_ss[idx2], ip_for_ss[idx2]);
 
     if (inet_pton(AF_INET, ip_for_ss[idx2], &server_addr2.sin_addr) <= 0)
     {
@@ -263,7 +263,7 @@ void copy_and_paste_server(int idx, int idx2, char argument[], char extra_argume
     }
     char message2[1024];
     strcpy(message2, "paste");
-    // printf("SENT TO 2nd SS\n");
+    printf("SENT TO 2nd SS\n");
 
     send(client_socket2, &message2, sizeof(message2), 0);
     send(client_socket2, &foridx2, sizeof(foridx2), 0);
@@ -271,7 +271,7 @@ void copy_and_paste_server(int idx, int idx2, char argument[], char extra_argume
 
     recv(client_socket1, &check1, sizeof(check1), 0);
     recv(client_socket2, &check2, sizeof(check2), 0);
-    // printf("check2 : %s", check2);
+    printf("check2 : %s", check2);
 
     // for (int i = 1; i <= currently_working_storage_servers; i++)
     // {
@@ -291,10 +291,10 @@ void start_red_control(int index)
 {
     if (first_temp_storage[index] != -1)
     {
-        printf("this server already has it's duplicated servers\n");
+        printf("done\n");
         return;
     }
-    // printf("reached\n");
+    printf("reached\n");
     int size_of_each_server[TOTAL_SERVER];
     for (int idx = 1; idx <= currently_working_storage_servers; idx++)
     {
@@ -330,7 +330,7 @@ void start_red_control(int index)
         if (recv(client_socket1, &total_size, sizeof(total_size), 0) > 0)
         {
         }
-        printf("returned size of server num %d : %lld\n", idx, total_size);
+        printf("returned size : %lld\n", total_size);
         size_of_each_server[idx] = total_size;
     }
     long long int min1 = 1e15;
@@ -357,8 +357,7 @@ void start_red_control(int index)
     }
     first_temp_storage[index] = indx1;
     second_temp_storage[index] = indx2;
-    // printf("storage server %d stores in %d %d\n", index, indx1, indx2);
-    printf("Storage server %d has duplicate servers as %d and %d\n", index, indx1, indx2);
+    printf("storage server %d stores in %d %d\n", index, indx1, indx2);
     // send()
     int client_socket1;
     struct sockaddr_in server_addr;
@@ -413,7 +412,7 @@ void start_red_control(int index)
     // send()
     bzero(message2, sizeof(message2));
     recv(client_socket2, message2, sizeof(message2), 0);
-    // printf("message from SS%d = %s\n message from SS%d = %s\n ", indx1, message1, indx2, message2);
+    printf("message from SS%d = %s\n message from SS%d = %s\n ", indx1, message1, indx2, message2);
     close(client_socket1);
     close(client_socket2);
     // strcpy(message1)
@@ -423,13 +422,9 @@ void start_red_control(int index)
     snprintf(g1, sizeof(g1), "./SS%d", index);
     // snprintf(g2, sizeof(g2), "SS%d", indx2);
     // printf("first temp storage %d\n", first_temp_storage[index]);
-    printf("Started transferring the data from server num %d to server num %d.......\n", index, indx1);
     copy_and_paste_server(index, indx1, ".", g1);
-    printf("Data transfer with %d completed\n", indx1);
     sleep(2);
-    printf("Started transferring the data from server num %d to server num %d........\n", index, indx2);
     copy_and_paste_server(index, indx2, ".", g1);
-    printf("Data transfer with %d completed\n", indx2);
     sleep(2);
     return;
 }
@@ -496,7 +491,7 @@ void *customer_handler(void *arg)
         {
             // Process received data (you can replace this with your own logic)
             buffer[bytes_received] = '\0'; // Null-terminate the received data
-            printf("Received data from customer: %s", buffer);
+            printf("Received data: %s", buffer);
             char function_to_call[1024];
             char argument[1024];
             char message_store[1024];
@@ -536,7 +531,6 @@ void *customer_handler(void *arg)
                 printf("Client requested to read %s\n", argument);
                 int idx = -1;
                 idx = get_cache(argument);
-                idx = -1;
                 if (idx == -1)
                 {
                     for (int i = 0; i < TOTAL_SERVER; i++)
@@ -575,17 +569,15 @@ void *customer_handler(void *arg)
                 }
                 if (f == 1)
                 {
-                    printf("Retrieving data from duplicate server %d of real server %d\n", first_temp_storage[idx], idx);
                     idx = first_temp_storage[idx];
                 }
                 else if (f == 2)
                 {
-                    printf("Retrieving data from duplicate server %d of real server %d\n", second_temp_storage[idx], idx);
                     idx = second_temp_storage[idx];
                 }
                 else if (f == 3)
                 {
-                    printf("All the servers related to this server num %d are not working\n", idx);
+                    printf("All the servers related to this are not working\n");
                     // send(client_socket, "failed to read due to closed servers\n", sizeof("failed to read due to closed servers\n"), 0);
                     continue;
                 }
@@ -600,7 +592,7 @@ void *customer_handler(void *arg)
                     }
                     strcpy(argument, argument2);
 
-                    // printf("argument %s\n", argument);
+                    printf("argument %s\n", argument);
                     return_struct return_struct_to_send;
                     return_struct_to_send.flag = 1;
                     return_struct_to_send.port = port_number_for_client[idx];
@@ -629,7 +621,6 @@ void *customer_handler(void *arg)
                 printf("Client requested to createfile at %s named %s\n", argument, extra_argument);
                 int idx = -1;
                 idx = get_cache(argument);
-                idx=-1;
                 if (idx == -1)
                 {
                     for (int i = 0; i < TOTAL_SERVER; i++)
@@ -690,11 +681,10 @@ void *customer_handler(void *arg)
                 else
                 {
                     send(client_socket, "failed to create file\n", sizeof("failed to create file\n"), 0);
-                    continue;
                 }
                 if (idff1 != -1 && working_server[idff1] == 1)
                 {
-                    printf("Started sycing it to duplicate server %d......\n", idff1);
+
                     // GOPAL
                     int client_socket2_1;
                     struct sockaddr_in server_addr2_1;
@@ -729,7 +719,7 @@ void *customer_handler(void *arg)
                     for (int i = 0; i < 3 && token2_1 != NULL; ++i)
                     {
                         // Process or print the token
-                        // printf("Word %d: %s\n", i + 1, token2_1);
+                        printf("Word %d: %s\n", i + 1, token2_1);
                         if (i == 1)
                         {
                             strcpy(path2_1, token2_1);
@@ -757,11 +747,9 @@ void *customer_handler(void *arg)
                     char response2_1[1024];
                     recv(client_socket2_1, response2_1, sizeof(response2_1), 0);
                     close(client_socket2_1);
-                    printf("done syncing with server num %d\n", idff1);
                 }
                 if (idff2 != -1 && working_server[idff2] == 1)
                 {
-                    printf("Started sycing it to duplicate server %d.......\n", idff2);
                     int client_socket2_2;
                     struct sockaddr_in server_addr2_2;
                     char message2_2[100];
@@ -796,7 +784,7 @@ void *customer_handler(void *arg)
                     for (int i = 0; i < 3 && token2_2 != NULL; ++i)
                     {
                         // Process or print the token
-                        // printf("Word %d: %s\n", i + 1, token2_2);
+                        printf("Word %d: %s\n", i + 1, token2_2);
                         if (i == 1)
                         {
                             strcpy(path2_2, token2_2);
@@ -823,8 +811,6 @@ void *customer_handler(void *arg)
                     char response2_2[1024];
                     recv(client_socket2_2, response2_2, sizeof(response2_2), 0);
                     close(client_socket2_2);
-
-                    printf("done syncing with server num %d\n", idff2);
                 }
                 continue;
             }
@@ -833,7 +819,6 @@ void *customer_handler(void *arg)
                 printf("Client requested to createdir at %s named %s\n", argument, extra_argument);
                 int idx = -1;
                 idx = get_cache(argument);
-                idx=-1;
                 if (idx == -1)
                 {
                     for (int i = 0; i < TOTAL_SERVER; i++)
@@ -882,7 +867,7 @@ void *customer_handler(void *arg)
                 send(client_socket1, temp, strlen(temp), 0);
                 char response[1024];
                 recv(client_socket1, response, sizeof(response), 0);
-                // printf("response %s\n", response);
+                printf("response %s\n", response);
                 if (strcmp(response, "fail") != 0)
                 {
                     insert_trie(Trie_for_ss1[idx], response);
@@ -891,15 +876,13 @@ void *customer_handler(void *arg)
                 else
                 {
                     send(client_socket, "failed to create dir\n", sizeof("failed to create dir\n"), 0);
-                    continue;
                 }
                 int idff = idx;
                 int idff1 = first_temp_storage[idx];
                 int idff2 = second_temp_storage[idx];
-                if (idff1 != -1)
+                if (idff1 != -1 && working_server[idff1] == 1)
                 {
-                    if (working_server[idff1] == 1)
-                        printf("Started sycing it to duplicate server %d.......\n", idff1);
+
                     // GOPAL
                     int client_socket2_1;
                     struct sockaddr_in server_addr2_1;
@@ -953,28 +936,24 @@ void *customer_handler(void *arg)
                         path2_1_1[i - 2] = path2_1[i];
                     }
                     path2_1_1[strlen(path2_1) - 2] = '\0';
-                    // printf("path2_1 %s\n", path2_1_1);
+                    printf("path2_1 %s\n", path2_1_1);
 
                     char new_path2_1[2000];
                     snprintf(new_path2_1, sizeof(new_path2_1), "./SS%d/%s", idff, path2_1_1);
                     char new_command2_1[10000];
                     snprintf(new_command2_1, sizeof(new_command2_1), "createdir %s %s", new_path2_1, name2_1);
-                    // printf("new_command2_1 %s\n", new_command2_1);
+                    printf("new_command2_1 %s\n", new_command2_1);
                     send(client_socket2_1, new_command2_1, strlen(new_command2_1), 0);
                     char response2_1[1024];
                     recv(client_socket2_1, response2_1, sizeof(response2_1), 0);
-                    // printf("Response from temporary 1st storage %s\n", response2_1);
+                    printf("Response from temporary 1st storage %s\n", response2_1);
 
                     close(client_socket2_1);
-                    if (working_server[idff1] == 1)
-                        printf("done syncing with server num %d\n", idff1);
 
                     // Create socket}
                 }
-                if (idff2 != -1)
+                if (idff2 != -1 && working_server[idff2] == 1)
                 {
-                    if (working_server[idff2] == 1)
-                        printf("Started sycing it to duplicate server %d.......\n", idff2);
                     int client_socket2_2;
                     struct sockaddr_in server_addr2_2;
                     char message2_2[100];
@@ -1025,23 +1004,21 @@ void *customer_handler(void *arg)
                         path2_2_1[i - 2] = path2_2[i];
                     }
                     path2_2_1[strlen(path2_2) - 2] = '\0';
-                    // printf("path2_1 %s\n", path2_2_1);
+                    printf("path2_1 %s\n", path2_2_1);
 
                     // strcat()
                     char new_path2_2[2000];
                     snprintf(new_path2_2, sizeof(new_path2_2), "./SS%d/%s", idff, path2_2_1);
-                    // printf("new_path2_2 %s\n", new_path2_2);
+                    printf("new_path2_2 %s\n", new_path2_2);
                     char new_command2_2[10000];
 
                     snprintf(new_command2_2, sizeof(new_command2_2), "createdir %s %s", new_path2_2, name2_2);
-                    // printf("new_command2_2 %s\n", new_command2_2);
+                    printf("new_command2_2 %s\n", new_command2_2);
                     send(client_socket2_2, new_command2_2, strlen(new_command2_2), 0);
                     char response2_2[1024];
                     recv(client_socket2_2, response2_2, sizeof(response2_2), 0);
-                    // printf("Response from temporary 2nd storage %s\n", response2_2);
+                    printf("Response from temporary 2nd storage %s\n", response2_2);
                     close(client_socket2_2);
-                    if (working_server[idff2] == 1)
-                        printf("done syncing with server num %d\n", idff2);
                 }
                 continue;
             }
@@ -1050,7 +1027,6 @@ void *customer_handler(void *arg)
                 printf("Client requested to deletefile at %s named %s\n", argument, extra_argument);
                 int idx = -1;
                 idx = get_cache(argument);
-                idx=-1;
                 if (idx == -1)
                 {
                     for (int i = 0; i < TOTAL_SERVER; i++)
@@ -1098,8 +1074,7 @@ void *customer_handler(void *arg)
 
                 char response[1024];
                 recv(client_socket1, response, sizeof(response), 0);
-                // printf("response %s\n", response);
-
+                printf("response %s\n", response);
                 if (strcmp(response, "fail") != 0)
                 {
                     delete_trie(Trie_for_ss1[idx], response);
@@ -1108,7 +1083,6 @@ void *customer_handler(void *arg)
                 else
                 {
                     send(client_socket, "failed to delete file\n", sizeof("failed to delete file\n"), 0);
-                    continue;
                 }
                 // gopal start
                 int idff = idx;
@@ -1118,10 +1092,8 @@ void *customer_handler(void *arg)
                 // {
 
                 // GOPAL
-                if (idff1 != -1)
+                if (idff1 != -1 && working_server[idff1] == 1)
                 {
-                    if (working_server[idff1] == 1)
-                        printf("Started sycing it to duplicate server %d.......\n", idff1);
                     int client_socket2_1;
                     struct sockaddr_in server_addr2_1;
                     char message2_1[100];
@@ -1184,13 +1156,9 @@ void *customer_handler(void *arg)
                     char response2_1[1024];
                     recv(client_socket2_1, response2_1, sizeof(response2_1), 0);
                     close(client_socket2_1);
-                    if (working_server[idff1] == 1)
-                        printf("done syncing with server num %d\n", idff1);
                 }
-                if (idff2 != -1)
+                if (idff2 != -1 && working_server[idff2] == 1)
                 {
-                    if (working_server[idff2] == 1)
-                        printf("Started sycing it to duplicate server %d.......\n", idff2);
                     int client_socket2_2;
                     struct sockaddr_in server_addr2_2;
                     char message2_2[100];
@@ -1252,8 +1220,6 @@ void *customer_handler(void *arg)
                     char response2_2[1024];
                     recv(client_socket2_2, response2_2, sizeof(response2_2), 0);
                     close(client_socket2_2);
-                    if (working_server[idff2] == 1)
-                        printf("done syncing with server num %d\n", idff2);
                 }
                 // gopal end
 
@@ -1264,7 +1230,6 @@ void *customer_handler(void *arg)
                 printf("Client requested to deletedir at %s named %s\n", argument, extra_argument);
                 int idx = -1;
                 idx = get_cache(argument);
-                idx=-1;
                 if (idx == -1)
                 {
                     for (int i = 0; i < TOTAL_SERVER; i++)
@@ -1322,7 +1287,6 @@ void *customer_handler(void *arg)
                 else
                 {
                     send(client_socket, "failed to delete dir\n", sizeof("failed to delete dir\n"), 0);
-                    continue;
                 }
                 int idff = idx;
                 int idff1 = first_temp_storage[idx];
@@ -1332,10 +1296,8 @@ void *customer_handler(void *arg)
 
                 // GOPAL
                 //    if(idff1!=-1 && working_server[idff1]==1){
-                if (idff1 != -1)
+                if (idff1 != -1 && working_server[idff1] == 1)
                 {
-                    if (working_server[idff1] == 1)
-                        printf("Started sycing it to duplicate server %d.......\n", idff1);
                     int client_socket2_1;
                     struct sockaddr_in server_addr2_1;
                     char message2_1[100];
@@ -1367,12 +1329,12 @@ void *customer_handler(void *arg)
                     memset(path2_1, '\0', sizeof(path2_1));
                     char name2_1[1024];
                     memset(name2_1, '\0', sizeof(name2_1));
-                    // printf("temp2_1 before tokenize %s\n", temp2_1);
+                    printf("temp2_1 before tokenize %s\n", temp2_1);
                     char *token2_1 = strtok(temp2_1, " ");
                     for (int i = 0; i < 3 && token2_1 != NULL; ++i)
                     {
                         // Process or print the token
-                        // printf("Word from tokenize%d: %s\n", i, token2_1);
+                        printf("Word from tokenize%d: %s\n", i, token2_1);
                         if (i == 1)
                         {
                             strcpy(path2_1, token2_1);
@@ -1384,7 +1346,7 @@ void *customer_handler(void *arg)
                         // Move to the next token
                         token2_1 = strtok(NULL, " ");
                     }
-                    // printf("path2_1 %s\n", path2_1);
+                    printf("path2_1 %s\n", path2_1);
                     char path2_1_1[2000];
                     for (int i = 2; i < strlen(path2_1); i++)
                     {
@@ -1402,17 +1364,13 @@ void *customer_handler(void *arg)
                     char response2_1[1024];
                     recv(client_socket2_1, response2_1, sizeof(response2_1), 0);
                     // printf("response from 1st temp ss %s\n", response2_1);
-                    // printf("updated to 1st temp SS\n ");
+                    printf("updated to 1st temp SS\n ");
 
                     close(client_socket2_1);
-                    if (working_server[idff1] == 1)
-                        printf("done syncing with server num %d\n", idff1);
                 }
                 usleep(1000);
-                if (idff2 != -1)
+                if (idff2 != -1 && working_server[idff2] == 1)
                 {
-                    if (working_server[idff2] == 1)
-                        printf("Started sycing it to duplicate server %d.......\n", idff2);
                     int client_socket2_2;
                     struct sockaddr_in server_addr2_2;
                     char message2_2[100];
@@ -1446,7 +1404,7 @@ void *customer_handler(void *arg)
                     for (int i = 0; i < 3 && token2_2 != NULL; ++i)
                     {
                         // Process or print the token
-                        // printf("Word %d: %s\n", i + 1, token2_2);
+                        printf("Word %d: %s\n", i + 1, token2_2);
                         if (i == 1)
                         {
                             strcpy(path2_2, token2_2);
@@ -1458,7 +1416,7 @@ void *customer_handler(void *arg)
                         // Move to the next token
                         token2_2 = strtok(NULL, " ");
                     }
-                    // printf("path2_2 %s\n", path2_2);
+                    printf("path2_2 %s\n", path2_2);
                     char path2_2_1[2000];
                     for (int i = 2; i < strlen(path2_2); i++)
                     {
@@ -1475,20 +1433,17 @@ void *customer_handler(void *arg)
                     char response2_2[1024];
                     recv(client_socket2_2, response2_2, sizeof(response2_2), 0);
                     // printf("response from 2nd temp ss %s\n", response2_2);
-                    // printf("updated to 2nd temp SS\n ");
+                    printf("updated to 2nd temp SS\n ");
                     close(client_socket2_2);
-                    if (working_server[idff2] == 1)
-                        printf("done syncing with server num %d\n", idff2);
                 }
                 usleep(1000);
                 continue;
             }
             else if (strcmp(function_to_call, "copy") == 0)
             {
-                printf("Client requested to copy at %s at %s\n", argument, extra_argument);
+                printf("Client requested to copyfile at %s named %s\n", argument, extra_argument);
                 int idx = -1;
                 idx = get_cache(argument);
-                idx=-1;
                 if (idx == -1)
                 {
                     for (int i = 0; i < TOTAL_SERVER; i++)
@@ -1503,7 +1458,6 @@ void *customer_handler(void *arg)
                 }
                 int idx2 = -1;
                 idx2 = get_cache(extra_argument);
-                idx2=-1;
                 if (idx2 == -1)
                 {
                     for (int i = 0; i < TOTAL_SERVER; i++)
@@ -1517,21 +1471,18 @@ void *customer_handler(void *arg)
                     }
                 }
 
-                if (idx == -1 || working_server[idx]==0)
+                if (idx == -1)
                 {
                     printf("the location you are finding does not exist(to copy)\n");
                     send(client_socket, "failed to copy\n", sizeof("failed to copy\n"), 0);
                     continue;
                 }
-                if (idx2 == -1 || working_server[idx2]==0)
+                if (idx2 == -1)
                 {
                     printf("the location you are finding does not exist(to paste)\n");
                     send(client_socket, "failed to copy\n", sizeof("failed to copy\n"), 0);
                     continue;
                 }
-
-
-                printf("Started copying from %d to %d.....\n", idx, idx2);
                 char buffer1[5000];
                 strcpy(buffer1, argument);
                 char *token = strtok(buffer1, "/");
@@ -1556,7 +1507,7 @@ void *customer_handler(void *arg)
 
                     between_ss foridx1;
                     between_ss foridx2;
-                    // printf("idx 1 = %d idex2 = %d\n", idx, idx2);
+                    printf("idx 1 = %d idex2 = %d\n", idx, idx2);
 
                     int client_socket1;
                     struct sockaddr_in server_addr;
@@ -1585,7 +1536,7 @@ void *customer_handler(void *arg)
                     foridx1.role = 1;
                     foridx1.port = random;
                     strcpy(message1, "copy");
-                    // printf("SENT TO 1ST SS\n");
+                    printf("SENT TO 1ST SS\n");
                     send(client_socket1, &message1, sizeof(message1), 0);
                     send(client_socket1, &foridx1, sizeof(foridx1), 0);
                     strcpy(foridx2.ip, ip_for_ss[idx]);
@@ -1604,7 +1555,7 @@ void *customer_handler(void *arg)
                     struct sockaddr_in server_addr2;
                     server_addr2.sin_family = AF_INET;
                     server_addr2.sin_port = htons(query_port_for_ss[idx2]);
-                    // printf("sending to %d %s\n", query_port_for_ss[idx2], ip_for_ss[idx2]);
+                    printf("sending to %d %s\n", query_port_for_ss[idx2], ip_for_ss[idx2]);
 
                     if (inet_pton(AF_INET, ip_for_ss[idx2], &server_addr2.sin_addr) <= 0)
                     {
@@ -1619,7 +1570,7 @@ void *customer_handler(void *arg)
                     }
                     char message2[1024];
                     strcpy(message2, "paste");
-                    // printf("SENT TO 2nd SS\n");
+                    printf("SENT TO 2nd SS\n");
 
                     send(client_socket2, &message2, sizeof(message2), 0);
                     send(client_socket2, &foridx2, sizeof(foridx2), 0);
@@ -1628,7 +1579,7 @@ void *customer_handler(void *arg)
 
                     recv(client_socket1, &check1, sizeof(check1), 0);
                     recv(client_socket2, &check2, sizeof(check2), 0);
-                    // printf("check2 : %s", check2);
+                    printf("check2 : %s", check2);
                     trie_add(idx2, check2);
 
                     if (strncmp(check1, "fail", 4) == 0 || strncmp(check2, "fail", 4) == 0)
@@ -1656,7 +1607,7 @@ void *customer_handler(void *arg)
                     }
                     new[strlen(extra_argument) - 2] = '\0';
                     snprintf(temp11, sizeof(temp11), "./SS%d/%s", idx2, new);
-                    // sleep(5);
+                    sleep(5);
 
                     if (first_temp_storage[idx2] != -1 && working_server[first_temp_storage[idx2]] == 1)
                     {
@@ -1703,7 +1654,7 @@ void *customer_handler(void *arg)
                         struct sockaddr_in server_addr4;
                         server_addr4.sin_family = AF_INET;
                         server_addr4.sin_port = htons(query_port_for_ss[first_temp_storage[idx2]]);
-                        // printf("sending to %d %s\n", query_port_for_ss[first_temp_storage[idx2]], ip_for_ss[idx2]);
+                        printf("sending to %d %s\n", query_port_for_ss[first_temp_storage[idx2]], ip_for_ss[idx2]);
                         if (inet_pton(AF_INET, ip_for_ss[first_temp_storage[idx2]], &server_addr4.sin_addr) <= 0)
                         {
                             perror("Invalid address/ Address not supported");
@@ -1716,7 +1667,7 @@ void *customer_handler(void *arg)
                         }
                         char message4[1024];
                         strcpy(message4, "paste");
-                        // printf("SENT TO 2nd SS\n");
+                        printf("SENT TO 2nd SS\n");
                         between_ss foridx4;
                         foridx4.role = -1;
                         foridx4.port = random_dup1;
@@ -1727,13 +1678,13 @@ void *customer_handler(void *arg)
                         char check4[1024];
                         recv(socket3, &check3, sizeof(check3), 0);
                         recv(socket4, &check4, sizeof(check4), 0);
-                        // printf("check3 : %s", check3);
-                        // printf("check4 : %s", check4);
+                        printf("check3 : %s", check3);
+                        printf("check4 : %s", check4);
 
                         close(socket3);
                         close(socket4);
                     }
-                    // sleep(5);
+                    sleep(5);
                     if (second_temp_storage[idx2] != -1 && working_server[second_temp_storage[idx2]] == 1)
                     {
                         int socket3 = socket(AF_INET, SOCK_STREAM, 0);
@@ -1792,7 +1743,7 @@ void *customer_handler(void *arg)
                         }
                         char message4[1024];
                         strcpy(message4, "paste");
-                        // printf("SENT TO 2nd SS\n");
+                        printf("SENT TO 2nd SS\n");
                         between_ss foridx4;
                         foridx4.role = -1;
                         foridx4.port = random_dup2;
@@ -1803,8 +1754,8 @@ void *customer_handler(void *arg)
                         char check4[1024];
                         recv(socket3, &check3, sizeof(check3), 0);
                         recv(socket4, &check4, sizeof(check4), 0);
-                        // printf("check3 : %s", check3);
-                        // printf("check4 : %s", check4);
+                        printf("check3 : %s", check3);
+                        printf("check4 : %s", check4);
                         close(socket3);
                         close(socket4);
                     }
@@ -1847,7 +1798,7 @@ void *customer_handler(void *arg)
                     char m1[20000];
                     recv(client_socket1, &m1, sizeof(m1), 0);
                     trie_add(idx, m1);
-                    // printf("received from SS %s\n", m1);
+                    printf("received from SS %s\n", m1);
                     send(client_socket, "done", sizeof("done"), 0);
                     // close(client_socket1);
                     // int idx1 =
@@ -1856,130 +1807,127 @@ void *customer_handler(void *arg)
                     sleep(2);
 
                     // updating 1st server
-                    if (indx1 != -1)
+
+                    strcpy(messag_coe, "copysame");
+                    strcat(messag_coe, " ");
+                    char new[1024];
+                    strcat(messag_coe, "./SS");
+                    char buffer[20];
+                    snprintf(buffer, sizeof(buffer), "%d", idx);
+                    strcat(messag_coe, buffer);
+                    strcat(messag_coe, "/");
+                    char new_argument[1024];
+                    for (int i = 2; i < strlen(argument); i++)
                     {
-                        strcpy(messag_coe, "copysame");
-                        strcat(messag_coe, " ");
-                        char new[1024];
-                        strcat(messag_coe, "./SS");
-                        char buffer[20];
-                        snprintf(buffer, sizeof(buffer), "%d", idx);
-                        strcat(messag_coe, buffer);
-                        strcat(messag_coe, "/");
-                        char new_argument[1024];
-                        for (int i = 2; i < strlen(argument); i++)
-                        {
-                            new_argument[i - 2] = argument[i];
-                        }
-                        new_argument[strlen(argument) - 2] = '\0';
-
-                        // strcat(new,argument)
-                        strcat(messag_coe, new_argument);
-                        strcat(messag_coe, " ");
-
-                        strcat(messag_coe, "./SS");
-                        char buffe[20];
-                        snprintf(buffe, sizeof(buffe), "%d", idx);
-                        strcat(messag_coe, buffe);
-                        strcat(messag_coe, "/");
-                        char extra_argument1[1024];
-                        for (int i = 2; i < strlen(extra_argument); i++)
-                        {
-                            extra_argument1[i - 2] = extra_argument[i];
-                        }
-                        extra_argument1[strlen(extra_argument) - 2] = '\0';
-                        strcat(messag_coe, extra_argument1);
-                        printf("Sending Finally%s\n", messag_coe);
-                        // printf("Files are in same Storage server\n");
-                        int client_socket3_1;
-                        struct sockaddr_in server_addr3_1;
-                        client_socket3_1 = socket(AF_INET, SOCK_STREAM, 0);
-                        if (client_socket3_1 == -1)
-                        {
-                            perror("Error creating socket");
-                            exit(EXIT_FAILURE);
-                        }
-                        server_addr3_1.sin_family = AF_INET;
-                        server_addr3_1.sin_port = htons(query_port_for_ss[indx1]);
-                        printf("sending to %d %s\n", query_port_for_ss[indx1], ip_for_ss[indx1]);
-                        if (inet_pton(AF_INET, ip_for_ss[indx1], &server_addr3_1.sin_addr) <= 0)
-                        {
-                            perror("Invalid address/ Address not supported");
-                            exit(EXIT_FAILURE);
-                        }
-                        if (connect(client_socket3_1, (struct sockaddr *)&server_addr3_1, sizeof(server_addr3_1)) < 0)
-                        {
-                            perror("Connection failed here");
-                            exit(EXIT_FAILURE);
-                        }
-                        send(client_socket3_1, &messag_coe, sizeof(messag_coe), 0);
-                        // char m1[20000];
-                        bzero(m1, sizeof(m1));
-                        recv(client_socket3_1, &m1, sizeof(m1), 0);
-                        // printf("updated to SS %s\n", m1);
-                        close(client_socket3_1);
-
-                        sleep(1);
-
-                        // updating 2nd server
-                        strcpy(messag_coe, "copysame");
-                        strcat(messag_coe, " ");
-                        char new1[1024];
-                        strcat(messag_coe, "./SS");
-                        char buffer1[20];
-                        snprintf(buffer1, sizeof(buffer1), "%d", idx);
-                        strcat(messag_coe, buffer1);
-                        strcat(messag_coe, "/");
-                        char new_argument1[1024];
-                        for (int i = 2; i < strlen(argument); i++)
-                        {
-                            new_argument1[i - 2] = argument[i];
-                        }
-                        new_argument1[strlen(argument) - 2] = '\0';
-                        strcat(messag_coe, new_argument1);
-                        strcat(messag_coe, " ");
-                        strcat(messag_coe, "./SS");
-                        char buffer2[20];
-                        snprintf(buffer2, sizeof(buffer2), "%d", idx);
-                        strcat(messag_coe, buffer1);
-                        strcat(messag_coe, "/");
-
-                        char argument2[1024];
-                        for (int i = 2; i < strlen(extra_argument); i++)
-                        {
-                            argument2[i - 2] = extra_argument[i];
-                        }
-                        argument2[strlen(extra_argument) - 2] = '\0';
-                        strcat(messag_coe, argument2);
-                        strcat(messag_coe, " ");
-                        // printf("Files are in same Storage server\n");
-                        int client_socket3_2;
-                        struct sockaddr_in server_addr3_2;
-                        client_socket3_2 = socket(AF_INET, SOCK_STREAM, 0);
-                        if (client_socket3_2 == -1)
-                        {
-                            perror("Error creating socket");
-                            exit(EXIT_FAILURE);
-                        }
-                        server_addr3_2.sin_family = AF_INET;
-                        server_addr3_2.sin_port = htons(query_port_for_ss[indx2]);
-                        if (inet_pton(AF_INET, ip_for_ss[indx2], &server_addr3_2.sin_addr) <= 0)
-                        {
-                            perror("Invalid address/ Address not supported");
-                            exit(EXIT_FAILURE);
-                        }
-                        if (connect(client_socket3_2, (struct sockaddr *)&server_addr3_2, sizeof(server_addr3_2)) < 0)
-                        {
-                            perror("Connection failed");
-                            exit(EXIT_FAILURE);
-                        }
-                        // printf("final sending %s\n", new1);
-                        send(client_socket3_2, &messag_coe, sizeof(messag_coe), 0);
-                        char m2[20000];
-                        recv(client_socket3_2, &m2, sizeof(m2), 0);
-                        // printf("updated to SS %s\n", m2);
-                        close(client_socket3_2);
+                        new_argument[i - 2] = argument[i];
                     }
+                    new_argument[strlen(argument) - 2] = '\0';
+
+                    // strcat(new,argument)
+                    strcat(messag_coe, new_argument);
+                    strcat(messag_coe, " ");
+
+                    strcat(messag_coe, "./SS");
+                    char buffe[20];
+                    snprintf(buffe, sizeof(buffe), "%d", idx);
+                    strcat(messag_coe, buffe);
+                    strcat(messag_coe, "/");
+                    char extra_argument1[1024];
+                    for (int i = 2; i < strlen(extra_argument); i++)
+                    {
+                        extra_argument1[i - 2] = extra_argument[i];
+                    }
+                    extra_argument1[strlen(extra_argument) - 2] = '\0';
+                    strcat(messag_coe, extra_argument1);
+                    printf("Sending Finally%s\n", messag_coe);
+                    // printf("Files are in same Storage server\n");
+                    int client_socket3_1;
+                    struct sockaddr_in server_addr3_1;
+                    client_socket3_1 = socket(AF_INET, SOCK_STREAM, 0);
+                    if (client_socket3_1 == -1)
+                    {
+                        perror("Error creating socket");
+                        exit(EXIT_FAILURE);
+                    }
+                    server_addr3_1.sin_family = AF_INET;
+                    server_addr3_1.sin_port = htons(query_port_for_ss[indx1]);
+                    printf("sending to %d %s\n", query_port_for_ss[indx1], ip_for_ss[indx1]);
+                    if (inet_pton(AF_INET, ip_for_ss[indx1], &server_addr3_1.sin_addr) <= 0)
+                    {
+                        perror("Invalid address/ Address not supported");
+                        exit(EXIT_FAILURE);
+                    }
+                    if (connect(client_socket3_1, (struct sockaddr *)&server_addr3_1, sizeof(server_addr3_1)) < 0)
+                    {
+                        perror("Connection failed here");
+                        exit(EXIT_FAILURE);
+                    }
+                    send(client_socket3_1, &messag_coe, sizeof(messag_coe), 0);
+                    // char m1[20000];
+                    bzero(m1, sizeof(m1));
+                    recv(client_socket3_1, &m1, sizeof(m1), 0);
+                    printf("updated to SS %s\n", m1);
+                    close(client_socket3_1);
+
+                    sleep(1);
+                    // updating 2nd server
+                    strcpy(messag_coe, "copysame");
+                    strcat(messag_coe, " ");
+                    char new1[1024];
+                    strcat(messag_coe, "./SS");
+                    char buffer1[20];
+                    snprintf(buffer1, sizeof(buffer1), "%d", idx);
+                    strcat(messag_coe, buffer1);
+                    strcat(messag_coe, "/");
+                    char new_argument1[1024];
+                    for (int i = 2; i < strlen(argument); i++)
+                    {
+                        new_argument1[i - 2] = argument[i];
+                    }
+                    new_argument1[strlen(argument) - 2] = '\0';
+                    strcat(messag_coe, new_argument1);
+                    strcat(messag_coe, " ");
+                    strcat(messag_coe, "./SS");
+                    char buffer2[20];
+                    snprintf(buffer2, sizeof(buffer2), "%d", idx);
+                    strcat(messag_coe, buffer1);
+                    strcat(messag_coe, "/");
+
+                    char argument2[1024];
+                    for (int i = 2; i < strlen(extra_argument); i++)
+                    {
+                        argument2[i - 2] = extra_argument[i];
+                    }
+                    argument2[strlen(extra_argument) - 2] = '\0';
+                    strcat(messag_coe, argument2);
+                    strcat(messag_coe, " ");
+                    // printf("Files are in same Storage server\n");
+                    int client_socket3_2;
+                    struct sockaddr_in server_addr3_2;
+                    client_socket3_2 = socket(AF_INET, SOCK_STREAM, 0);
+                    if (client_socket3_2 == -1)
+                    {
+                        perror("Error creating socket");
+                        exit(EXIT_FAILURE);
+                    }
+                    server_addr3_2.sin_family = AF_INET;
+                    server_addr3_2.sin_port = htons(query_port_for_ss[indx2]);
+                    if (inet_pton(AF_INET, ip_for_ss[indx2], &server_addr3_2.sin_addr) <= 0)
+                    {
+                        perror("Invalid address/ Address not supported");
+                        exit(EXIT_FAILURE);
+                    }
+                    if (connect(client_socket3_2, (struct sockaddr *)&server_addr3_2, sizeof(server_addr3_2)) < 0)
+                    {
+                        perror("Connection failed");
+                        exit(EXIT_FAILURE);
+                    }
+                    printf("final sending %s\n", new1);
+                    send(client_socket3_2, &messag_coe, sizeof(messag_coe), 0);
+                    char m2[20000];
+                    recv(client_socket3_2, &m2, sizeof(m2), 0);
+                    printf("updated to SS %s\n", m2);
+                    close(client_socket3_2);
                 }
                 continue;
             }
@@ -1988,7 +1936,6 @@ void *customer_handler(void *arg)
                 printf("Client requested to copydir at %s named %s\n", argument, extra_argument);
                 int idx = -1;
                 idx = get_cache(argument);
-                idx=-1;
                 if (idx == -1)
                 {
                     for (int i = 0; i < TOTAL_SERVER; i++)
@@ -2047,19 +1994,14 @@ void *customer_handler(void *arg)
                 }
                 continue;
             }
-            else if(strcmp(function_to_call,"EXIT")==0)
+            else
             {
-                printf("Client exited\n");
-                continue;
-            }
-            else {
                 continue;
             }
             int index_of_server = -1;
             // try to search this in cache
             int rec = -1;
             index_of_server = get_cache(argument);
-            index_of_server=-1;
             if (index_of_server == -1)
             {
                 for (int i = 1; i < TOTAL_SERVER; i++)
@@ -2098,7 +2040,6 @@ void *customer_handler(void *arg)
                 return_struct_to_send.port = port_number_for_client[index_of_server];
                 strcpy(return_struct_to_send.ip, ip_for_ss[index_of_server]);
                 return_struct_to_send.flag = 0;
-                
                 // Send a response back to the client (optional)
                 printf("sending port %d ip %s\n", return_struct_to_send.port, return_struct_to_send.ip);
                 send(client_socket, &return_struct_to_send, sizeof(return_struct_to_send), 0);
@@ -2155,10 +2096,10 @@ void *customer_handler(void *arg)
                         bzero(mess, sizeof(mess));
                         recv(client_socket_for_updating, mess, sizeof(mess), 0);
                         printf("Updated server gives message%s\n", mess);
-                        // close(client_socket_for_updating);
+                        close(client_socket_for_updating);
                     }
                     usleep(1000);
-                    if (idx2 != -1 && working_server[idx2] == 1)
+                    if (idx2 != -1 && working_server[idx1] == 1)
                     {
                         int client_socket_for_updating = socket(AF_INET, SOCK_STREAM, 0);
                         if (client_socket_for_updating == -1)
@@ -2185,11 +2126,10 @@ void *customer_handler(void *arg)
                         send(client_socket_for_updating, &final_mess, sizeof(final_mess), 0);
                         bzero(mess, sizeof(mess));
                         recv(client_socket_for_updating, mess, sizeof(mess), 0);
-                        // printf("Updated server gives message%s\n", mess);
-                        // close(client_socket_for_updating);
+                        printf("Updated server gives message%s\n", mess);
+                        close(client_socket_for_updating);
                     }
                     write_flag = 0;
-                    continue;
                 }
                 // gopal
                 else if (append_flag == 1)
@@ -2256,12 +2196,12 @@ void *customer_handler(void *arg)
                         send(client_socket_for_updating, &mess, sizeof(mess), 0);
                         bzero(mess, sizeof(mess));
                         recv(client_socket_for_updating, mess, sizeof(mess), 0);
-                        // printf("Updated server gives message%s\n", mess);
+                        printf("Updated server gives message%s\n", mess);
                         close(client_socket_for_updating);
                     }
                 }
                 // gopal
-                // printf("sending port %d ip %s\n", return_struct_to_send.port, return_struct_to_send.ip);
+                printf("sending port %d ip %s\n", return_struct_to_send.port, return_struct_to_send.ip);
 
                 // recv(client_socket, buffer, sizeof(buffer), 0);
                 // printf("Received data: %s", buffer);
@@ -2289,7 +2229,7 @@ void *customer_intialize(void *arg)
             close(server_socket);
             exit(EXIT_FAILURE);
         }
-        printf("Connection from %s:%d from a customer\n", inet_ntoa(client_address.sin_addr), ntohs(client_address.sin_port));
+        printf("Connection from %s:%d\n", inet_ntoa(client_address.sin_addr), ntohs(client_address.sin_port));
         pthread_t customer_thread;
         pthread_create(&customer_thread, NULL, customer_handler, (void *)&client_socket);
     }
@@ -2326,13 +2266,13 @@ void *stserver_handler(void *arg)
     currently_working_storage_servers++;
     arrived_till_now++;
     printf("%d storage servers are working\n", currently_working_storage_servers);
+
     if (currently_working_storage_servers == 3)
     {
-        // printf("%d storage servers are working\n", currently_working_storage_servers);
+        printf("%d storage servers are working\n", currently_working_storage_servers);
         start_red_control(1);
         start_red_control(2);
         start_red_control(3);
-        start_red_control(my_info.server_num);
     }
     else if (currently_working_storage_servers > 3)
     {
@@ -2370,8 +2310,7 @@ void *stserver_handler(void *arg)
     while (1)
     {
         if (recv(stserver_socket, buffer, sizeof(buffer), 0) > 0)
-            printf("Server %d is down\n", my_info.server_num);
-        // printf("Received data: %s FROM %d\n", buffer, my_info.server_num);
+            printf("Received data: %s %d\n", buffer, my_info.server_num);
         if (strcmp(buffer, "EXIT") != 0)
         {
             printf("Didnt Get EXIT\n");
@@ -2382,8 +2321,7 @@ void *stserver_handler(void *arg)
         working_server[my_info.server_num] = 0;
 
         if (recv(stserver_socket, buffer, sizeof(buffer), 0) > 0)
-            printf("server %d started working\n", my_info.server_num);
-        // printf("Received data: %s %d\n", buffer, my_info.server_num);
+            printf("Received data: %s %d\n", buffer, my_info.server_num);
         if (strcmp(buffer, "START") != 0)
         {
             printf("Didnt Get START\n");
@@ -2397,21 +2335,12 @@ void *stserver_handler(void *arg)
         memset(newpath, '\0', sizeof(newpath));
         if (recv(stserver_socket, newpath, sizeof(newpath), 0) > 0)
         {
-            // printf("Received data: %s %d", newpath, my_info.server_num);
+            printf("Received data: %s %d", newpath, my_info.server_num);
         }
         // printf("newpath %s\n", newpath);
         free_trienode(Trie_for_ss1[my_info.server_num]);
         Trie_for_ss1[my_info.server_num] = make_trienode('0');
         trie_add(my_info.server_num, newpath);
-        for (int i = 0; i < TOTAL_SERVER; i++)
-        {
-            if (i == my_info.server_num)
-                continue;
-            if (my_info.server_num == first_temp_storage[i] || my_info.server_num == second_temp_storage[i])
-            {
-                printf("Getting synced with %d\n", i);
-            }
-        }
     }
 
     return NULL;

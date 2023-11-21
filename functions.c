@@ -1,135 +1,128 @@
 // Define the character size
 #include "functions.h"
- 
-// Data structure to store a Trie node
 
- 
-// Function that returns a new Trie node
-struct Trie* getNewTrieNode()
+
+TrieNode *make_trienode(char data)
 {
-    struct Trie* node = (struct Trie*)malloc(sizeof(struct Trie));
-    node->isLeaf = 0;
- 
-    for (int i = 0; i < CHAR_SIZE; i++) {
-        node->character[i] = NULL;
-    }
- 
+    // Allocate memory for a TrieNode
+    TrieNode *node = (TrieNode *)calloc(1, sizeof(TrieNode));
+    for (int i = 0; i < N; i++)
+        node->children[i] = NULL;
+    node->is_leaf = 0;
+    node->data = data;
     return node;
 }
- 
-// Iterative function to insert a string into a Trie
-void insert(struct Trie *head, char* str)
+
+void free_trienode(TrieNode *node)
 {
-    // start from the root node
-    struct Trie* curr = head;
-    while (*str)
+    // Free the trienode sequence
+    for (int i = 0; i < N; i++)
     {
-        // create a new node if the path doesn't exist
-        if (curr->character[*str - 'a'] == NULL) {
-            curr->character[*str - 'a'] = getNewTrieNode();
+        if (node->children[i] != NULL)
+        {
+            free_trienode(node->children[i]);
         }
- 
-        // go to the next node
-        curr = curr->character[*str - 'a'];
- 
-        // move to the next character
-        str++;
+        else
+        {
+            continue;
+        }
     }
- 
-    // mark the current node as a leaf
-    curr->isLeaf = 1;
+    free(node);
 }
- 
-// Iterative function to search a string in a Trie. It returns 1
-// if the string is found in the Trie; otherwise, it returns 0.
-int search(struct Trie* head, char* str)
+
+TrieNode *insert_trie(TrieNode *root, char *word)
 {
-    // return 0 if Trie is empty
-    if (head == NULL) {
-        return 0;
-    }
- 
-    struct Trie* curr = head;
-    while (*str)
+    // Inserts the word onto the Trie
+    // ASSUMPTION: The word only has lower case characters
+    TrieNode *temp = root;
+
+    for (int i = 0; word[i] != '\0'; i++)
     {
-        // go to the next node
-        curr = curr->character[*str - 'a'];
- 
-        // if the string is invalid (reached end of a path in the Trie)
-        if (curr == NULL) {
+        // Get the relative position in the alphabet list
+        int idx = (int)word[i];
+        if (temp->children[idx] == NULL)
+        {
+            // If the corresponding child doesn't exist,
+            // simply create that child!
+            temp->children[idx] = make_trienode(word[i]);
+        }
+        else
+        {
+            // Do nothing. The node already exists
+        }
+        // Go down a level, to the child referenced by idx
+        // since we have a prefix match
+        temp = temp->children[idx];
+    }
+    // At the end of the word, mark this node as the leaf node
+    temp->is_leaf = 1;
+    return root;
+}
+
+int search_trie(TrieNode *root, char *word)
+{
+
+
+    // Searches for word in the Trie
+    TrieNode *temp = root;
+
+    for (int i = 0; word[i] != '\0'; i++)
+    {
+        int position = (int)word[i];
+        if (temp->children[position] == NULL)
             return 0;
-        }
- 
-        // move to the next character
-        str++;
+        temp = temp->children[position];
     }
- 
-    // return 1 if the current node is a leaf and the
-    // end of the string is reached
-    return curr->isLeaf;
-}
- 
-// Returns 1 if a given Trie node has any children
-int hasChildren(struct Trie* curr)
-{
-    for (int i = 0; i < CHAR_SIZE; i++)
-    {
-        if (curr->character[i]) {
-            return 1;       // child found
-        }
-    }
- 
+    if (temp != NULL && temp->is_leaf == 1)
+        return 1;
     return 0;
 }
- 
-// Recursive function to delete a string from a Trie
-int deletion(struct Trie **curr, char* str)
+
+void print_trie(TrieNode *root)
 {
-    // return 0 if Trie is empty
-    if (*curr == NULL) {
-        return 0;
-    }
- 
-    // if the end of the string is not reached
-    if (*str)
+    // printf(" ");
+    // Prints the nodes of the trie
+    if (!root)
+        return;
+    TrieNode *temp = root;
+    printf("%c -> ", temp->data);
+    for (int i = 0; i < N; i++)
     {
-        // recur for the node corresponding to the next character in
-        // the string and if it returns 1, delete the current node
-        // (if it is non-leaf)
-        if (*curr != NULL && (*curr)->character[*str - 'a'] != NULL &&
-            deletion(&((*curr)->character[*str - 'a']), str + 1) &&
-            (*curr)->isLeaf == 0)
-        {
-            if (!hasChildren(*curr))
-            {
-                free(*curr);
-                (*curr) = NULL;
-                return 1;
-            }
-            else {
-                return 0;
-            }
+        print_trie(temp->children[i]);
+    }
+}
+
+void print_search(TrieNode *root, char *word)
+{
+    printf("Searching for %s: ", word);
+    if (search_trie(root, word) == 0)
+        printf("Not Found\n");
+    else
+        printf("Found!\n");
+}
+int is_leaf_node(TrieNode* root, char* word) {
+    // Checks if the prefix match of word and root
+    // is a leaf node
+    TrieNode* temp = root;
+    for (int i=0; word[i]; i++) {
+        int position = (int) word[i] - 'a';
+        if (temp->children[position]) {
+            temp = temp->children[position];
         }
     }
- 
-    // if the end of the string is reached
-    if (*str == '\0' && (*curr)->isLeaf)
-    {
-        // if the current node is a leaf node and doesn't have any children
-        if (!hasChildren(*curr))
-        {
-            free(*curr);    // delete the current node
-            (*curr) = NULL;
-            return 1;       // delete the non-leaf parent nodes
-        }
- 
-        // if the current node is a leaf node and has children
-        else {
-            // mark the current node as a non-leaf node (DON'T DELETE IT)
-            (*curr)->isLeaf = 0;
-            return 0;       // don't delete its parent nodes
-        }
+    return temp->is_leaf;
+}
+TrieNode* delete_trie(TrieNode* root, char* word) {
+    // Will try to delete the word sequence from the Trie only it 
+    // ends up in a leaf node
+    if (!root)
+        return NULL;
+    if (!word || word[0] == '\0')
+        return root;
+    // If the node corresponding to the match is not a leaf node,
+    // we stop
+    if (!is_leaf_node(root, word)) {
+        return root;
     }
- 
-    return 0;
+    // TODO
 }

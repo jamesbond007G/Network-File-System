@@ -10,16 +10,23 @@
 #include <arpa/inet.h>
 #include <pthread.h>
 
-#define CHAR_SIZE 26
+typedef struct TrieNode TrieNode;
+#define N 257
 
-struct Trie
+struct TrieNode
 {
-    int isLeaf;             // 1 when the node is a leaf node
-    struct Trie* character[CHAR_SIZE];
+    // The Trie Node Structure
+    // Each node has N children, starting from the root
+    // and a flag to check if it's a leaf node
+    char data; // Storing for printing purposes only
+    TrieNode *children[N];
+    int is_leaf;
 };
-
-struct Trie *getNewTrieNode();
-void insert(struct Trie *head, char *str);
-int search(struct Trie *head, char *str);
-int hasChildren(struct Trie *curr);
-int deletion(struct Trie **curr, char *str);
+TrieNode *make_trienode(char data);
+void free_trienode(TrieNode *node);
+TrieNode *insert_trie(TrieNode *root, char *word);
+int search_trie(TrieNode *root, char *word);
+void print_trie(TrieNode *root);
+void print_search(TrieNode *root, char *word);
+TrieNode* delete_trie(TrieNode* root, char* word);
+int is_leaf_node(TrieNode *root, char *word);
