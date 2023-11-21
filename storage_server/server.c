@@ -915,12 +915,12 @@ void *listen_thread(void *arg)
                 // strcpy(message1111,);
                 int index_of_lat_slash = -1;
                 // strcat(path_of_argument,"/");
-                strcat(path_of_argument, extra_message);
+                strcat(r1.path, extra_message);
                 char lollllllll[1024];
                 strcpy(lollllllll, path_of_argument);
-                printf("path_of_all_file\n%s\n", path_of_argument);
-                listFilesRecursivelyAndSend(path_of_argument, message1111);
-                strcat(message1111, path_of_argument);
+                printf("path_of_all_file\n%s\n", r1.path);
+                listFilesRecursivelyAndSend(r1.path, message1111);
+                strcat(message1111, r1.path);
                 strcat(message1111, "\n");
                 printf("all pasted file sent to naming server \n%s\n", message1111);
                 send(new_socket, &message1111, sizeof(message1111), 0);
